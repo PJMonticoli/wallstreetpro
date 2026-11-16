@@ -1,0 +1,4 @@
+# Backtest only (backtest/backtest_wsp.py). The rest of the system needs no Python.
+yfinance>=0.2.50
+pandas>=2.0
+numpy>=1.26

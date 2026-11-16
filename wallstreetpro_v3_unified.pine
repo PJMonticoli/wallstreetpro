@@ -1,0 +1,81 @@
+//@version=6
+indicator("WallStreetPro v3 Unified", overlay=false, max_labels_count=500)
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WallStreetPro: the single indicator of the system.
+//
+// The NAME says "v3 Unified" on purpose: renaming it forces you to re-add it to
+// the chart and to touch CLAUDE.md. The contents follow the current rules.
+//
+// Purpose: expose in the data window EVERYTHING the weekly check reads over MCP
+// (data_get_study_values), with no screenshots. It draws the EMAs and the
+// extended zone on the price pane; its own pane shows ADR20, the number that
+// sizes the stop.
+//
+// What was removed, and why (technical audit of the indicator):
+//   · The 0-5 score and its five conditions. They encoded an older rule set,
+//     were STRICTER than the rules in force at the time and added three
+//     conditions the system did not have. The score governed nothing and only
+//     blocked psychologically ("it never reaches 5/5").
+//   · The RSI 40/70 cross arrows: they suggested a rule that does not exist.
+//   · The "fragile" zone: it is not a guardrail of the system.
+// What was added:
+//   · adr20. It used to be computed by hand from OHLCV bars, and one day it came
+//     out with 15 bars instead of 20 on five tickers with nothing catching it.
+//     It is the input of the stop, so it has to live here.
+//   · volRatioMed (20-day median instead of 20-day mean). An earnings gap
+//     inflates the 20-day SMA of volume by about 26% for 20 sessions; the median
+//     does not move. Rule of thumb: 1.3x median is about 1.18x mean.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Base indicators ─────────────────────────────────────────────────────────
+ema200    = ta.ema(close, 200)
+ema50     = ta.ema(close, 50)
+ema21     = ta.ema(close, 21)
+rsi       = ta.rsi(close, 14)            // context reading, never a veto
+rsiSignal = ta.ema(rsi, 9)               // 9-period EMA of the RSI
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+distEMA50 = (close - ema50) / ema50 * 100
+
+// ADR20: 20-session average of the daily range, in percent.
+// Same definition as the screener's Volatility.M and as Qullamaggie's ADR%:
+// high/low - 1 == (high-low)/low. One definition, computed, never done by hand.
+adr20     = ta.sma((high - low) / low, 20) * 100
+
+// Volume is CONTEXT, not a veto. Median denominator, immune to an earnings gap.
+volMed20  = ta.median(volume, 20)
+volSMA20  = ta.sma(volume, 20)
+volRatio    = volume / volSMA20          // kept for comparison with older readings
+volRatioMed = volume / volMed20          // the one the system uses
+
+// ─── EMAs on the price pane (force_overlay) ──────────────────────────────────
+plot(ema200, "EMA 200", color=color.red,    linewidth=3, force_overlay=true)
+plot(ema50,  "EMA 50",  color=color.blue,   linewidth=2, force_overlay=true)
+plot(ema21,  "EMA 21",  color=color.yellow, linewidth=1, style=plot.style_circles, force_overlay=true)
+
+// ─── Extended zone (guardrail: more than 15% above EMA50) ────────────────────
+extended = close > ema50 * 1.15
+bgcolor(extended ? color.new(color.red, 80) : na, title="Extended zone", force_overlay=true)
+
+if extended and not extended[1]
+    label.new(bar_index, high, "EXTENDED >15% EMA50", color=color.red, textcolor=color.white, style=label.style_label_down, size=size.small, force_overlay=true)
+
+// ─── Pane: ADR20, the number that sizes the stop ─────────────────────────────
+plot(adr20, "ADR20 %", color=color.new(color.aqua, 0), linewidth=2)
+hline(2, "ADR 2% (low-volatility ETF line, rule D3)", color=color.new(color.gray, 60), linestyle=hline.style_dotted)
+hline(4, "ADR 4% (reference)", color=color.new(color.green, 60), linestyle=hline.style_dotted)
+
+// ─── Data window: everything the weekly check reads over MCP ─────────────────
+// (ADR20 % is already a visible plot above: a visible plot shows up in the data window too)
+plot(rsi,         "RSI",             display=display.data_window)
+plot(rsiSignal,   "RSI signal",      display=display.data_window)
+plot(macdLine,    "MACD line",       display=display.data_window)
+plot(signalLine,  "MACD signal",     display=display.data_window)
+plot(histLine,    "MACD hist",       display=display.data_window)
+plot(volRatioMed, "Vol ratio med x", display=display.data_window)
+plot(volRatio,    "Vol ratio sma x", display=display.data_window)
+plot(distEMA50,   "Dist EMA50 %",    display=display.data_window)
+plot(ema200,      "EMA200 val",      display=display.data_window)
+plot(ema50,       "EMA50 val",       display=display.data_window)
+plot(ema21,       "EMA21 val",       display=display.data_window)
+plot(extended ? 1 : 0, "Extended (>15% EMA50)", display=display.data_window)
