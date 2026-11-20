@@ -33,7 +33,7 @@ Claude's role: run the weekly check and give an unambiguous **BUY / NO BUY** ver
 
 ## v5 PHILOSOPHY: THE SYSTEM DOES NOT MAKE YOU WIN, IT KEEPS YOU FROM LOSING
 
-1. **The primary metric is EXECUTION, not P&L.** Approved orders that reached the broker divided by approved orders. With the measured variance, P&L over 8 weeks distinguishes nothing (it would take 1,097 trades). The execution rate is measured with n = 10. The scoreboard is in `current_state.md`.
+1. **The primary metric is EXECUTION, not P&L.** Approved orders that reached the broker divided by approved orders. With the measured variance, P&L over 8 weeks distinguishes nothing (it would take 1,097 trades). The execution rate is measured with n = 10. The scoreboard is in `wiki/context.md`.
 2. **No decision with the market open.** Everything is decided after the close and executed with resting orders. In one real case, deliberating for three hours with the market open raised the risk per share by 33%.
 3. **Fewer rules, not more.** Every bad result used to add a veto (D8, D9 and D10 each came out of a single case) and none was ever removed. That is how the system reached 10 guardrails that produced 1 approval a week on a ONE-position account, and the one that got through was the most extended of the group.
 4. **NEVER average down (C8).** Your own average price is not an input to a buy. It is the one rule that real losses prove beyond discussion.
@@ -66,7 +66,9 @@ TradingView MCP: tools named `mcp__tradingview__*`, served by the third-party `t
 
 | File | Purpose |
 |:---|:---|
-| `current_state.md` | **Volatile data: capital, 1R, open position, resting orders, dates. ALWAYS read it first.** Gitignored; created from `current_state.example.md` |
+| `wiki/context.md` | **Volatile data: capital, 1R, open position, resting orders, dates. Loaded every session (imported below).** Gitignored; created from `wiki/context.example.md` |
+| `wiki/index.md`, `wiki/log.md`, `wiki/*.md` | The rest of the wiki: one line per page, the dated history (Grep only) and one page per position or study. See the WIKI section and `docs/llm-wiki.md` |
+| `backtest/averaging_check.py` | Pre-registered check for the one rule people want to break: averaging down a loser. Config in `backtest/averaging_config.json` |
 | `trading_system.md` | Full v5 rules. §0.2 changelog, §2.3 entry, §2.4 guardrails, §2.6 exit, §BT, §MET |
 | `daily_brief.md` | Script of the weekly check, runnable end to end. The name is historical: the check was daily until v4.1 |
 | `docs/backtest-findings.md` | **The audit that produced v5. The source of every number in this file** |
@@ -76,7 +78,9 @@ TradingView MCP: tools named `mcp__tradingview__*`, served by the third-party `t
 | `screener.ps1` -> `watchlist_screener.md` | Wide-funnel screener (§2.7, D10 intact). The output is gitignored |
 | `trade_log.md` | **Closed trades with MAE/MFE. The basis of the kill criterion (§MET).** Gitignored; created from `trade_log.example.md` |
 
-Capital, 1R, the open position and key dates are in `current_state.md`. Read it at the start of every session. Do not duplicate it here.
+Capital, 1R, the open position and key dates are in `wiki/context.md`, loaded here: @wiki/context.md
+
+Do not duplicate it in this file.
 
 ---
 
@@ -162,6 +166,8 @@ All four YES = **BUY**, and the order is placed TODAY. Any NO = **NO BUY**.
 - Gating a trade on a minimum capital. The operator decides the amounts.
 - **Leaving the analysis in a file without placing the order at the broker.** Execution is the primary metric of the system (§MET), not an administrative detail.
 - Running a backtest by reasoning about past prices instead of running `backtest/backtest_wsp.py`.
+- Answering "should I average down?" from scratch, or guessing a floor, instead of running `backtest/averaging_check.py`.
+- Leaving a session's new facts (orders placed, fills, decisions, studies) only in the chat instead of ingesting them into the wiki.
 
 ---
 
@@ -173,3 +179,32 @@ All four YES = **BUY**, and the order is placed TODAY. Any NO = **NO BUY**.
 | "Analyze [TICKER]" | Pre-filter, did it close above the 10-session high, 5 guardrails, order, stop and date |
 | "How is [TICKER] doing?" | Price against the fill, distance to the stop, day n of 20 |
 | "Can I buy today?" | SPY regime and available trading cash |
+| "Averaging check [TICKER]" | After the close: update `backtest/averaging_config.json` if the position or its orders changed, run `backtest/averaging_check.py TICKER`, check issuance, financing and news by hand, report the verdict, the floor estimate, the technicals and the exit table, then ingest it |
+| "Lint the wiki" | `python wiki/lint.py`, then a manual pass for contradictions (see WIKI) |
+
+---
+
+## WIKI: HOW THE MEMORY OF THIS PROJECT WORKS
+
+The "LLM Wiki" pattern: raw sources stay immutable, Claude maintains a small set of interlinked pages, and this file is the schema. Background and credits: `docs/llm-wiki.md`.
+
+| Level | What | Budget | When |
+|:---|:---|:---|:---|
+| L0 | This file | | every session |
+| L1 | `wiki/context.md` | **6,000 characters max** | every session (imported above) |
+| L2 | `wiki/index.md`, then the pages that match | as needed | on demand |
+| L3 | `wiki/log.md` and `wiki/raw/` | never whole | Grep only |
+
+Routing test for L1: would missing it be dangerous or embarrassing (a wrong order, a misread position)? It goes in `context.md`. Merely inconvenient? It goes in a page, with a one-line pointer.
+
+- **Pages:** one per position or topic, plus one per dated study that does not fit a topic. Frontmatter `type` (topic or investigation), `status`, `updated`. Dated history at the end.
+- **`index.md`:** one line per page, 200 characters max: `- [Title](relative/path.md): summary, **status** (updated YYYY-MM-DD)`.
+- **`log.md`:** append-only, newest at the bottom, 1 to 3 lines: `## [YYYY-MM-DD] ingest|update|query|lint | what`.
+- **`raw/`:** immutable sources in their original language (broker statements, exports). Never edited.
+
+Operations:
+- **Ingest**, at the end of any session with something new: update the page, its index line, a log entry, and `context.md` only with what every future session needs, within the budget. Studies keep their code and outputs under `backtest/`.
+- **Query:** `context.md`, then `index.md`, then Grep `wiki/`, then open only the matching pages. A reusable answer is filed back as a page.
+- **Lint:** `python wiki/lint.py`. Then by hand: a dated correction ("corrected YYYY-MM-DD: ...") is also applied to `index.md` and `context.md`, otherwise the old claim keeps winning. Log the pass even if nothing changed.
+
+Write only what is verified and mark hypotheses as such. Never write credentials or account numbers in a page; say where they are found.

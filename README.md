@@ -20,7 +20,7 @@ The part I would point a reviewer to is the backtest. After several versions of 
           |                                      |
   TradingView MCP server  <---- MCP ---->  Claude Code
   (third party)                              reads CLAUDE.md, trading_system.md,
-          |                                  daily_brief.md, current_state.md
+          |                                  daily_brief.md, wiki/context.md
   WallStreetPro v3 Unified (Pine)                |
   ADR20, EMAs and distance to EMA50              v
   exposed in the data window          BUY / NO BUY + entry, stop, exit date
@@ -62,14 +62,14 @@ The script does five things, and skips whatever is already done, so it is safe t
 2. Clones the TradingView MCP server into `%USERPROFILE%\tradingview-mcp-jackson` and runs `npm install` there.
 3. Registers that server with Claude Code under the name `tradingview`, scoped to this folder (`claude mcp add tradingview -- node ...\src\server.js`).
 4. Creates `backtest\.venv` and installs `requirements.txt`.
-5. Copies `current_state.example.md` to `current_state.md` and `trade_log.example.md` to `trade_log.md`. Both copies are gitignored.
+5. Copies the templates to your personal files: `wiki/context.md`, `wiki/index.md` and `wiki/log.md` from their `.example.md` versions, `trade_log.md` and `backtest/averaging_config.json`. All of them are gitignored.
 
 Options: `-McpPath D:\somewhere` to put the MCP server elsewhere, `-SkipBacktest`, `-SkipMcp`, and `-DryRun` to see what it would do without changing anything.
 
 Two things are left to do by hand, once:
 
 1. Open TradingView Desktop and log in. Open the Pine Editor, paste the contents of `wallstreetpro_v3_unified.pine`, save it and add it to a chart.
-2. Open `current_state.md` and replace the example numbers (USD 10,000 of trading capital, no positions) with your own.
+2. Open `wiki/context.md` and replace the example numbers (USD 10,000 of trading capital, no positions) with your own.
 
 ## Running the weekly check
 
@@ -82,6 +82,28 @@ Claude then checks the market regime on SPY, reads your state file, looks for a 
 Other prompts that work inside that session: `Analyze <TICKER>`, `How is <TICKER> doing?`, `Can I buy today?`.
 
 The screener's sizing columns default to the example capital. To use your own numbers, set `WSP_CAPITAL` and `WSP_CASH` in your environment, or run `screener.ps1 -Capital 25000 -CashAvail 8000`.
+
+## How the project remembers: an LLM wiki
+
+Claude Code starts every session with no memory, so the project keeps one for it in `wiki/`, following Andrej Karpathy's "LLM Wiki" pattern. `CLAUDE.md` is the schema. `wiki/context.md` is the only page loaded in every session, with a hard budget of 6,000 characters: capital, positions, resting orders, deadlines. Everything else lives in one page per position or study, listed in `wiki/index.md`, with the dated history in an append-only `wiki/log.md` that Claude Greps instead of reading.
+
+At the end of a session with something new, Claude updates the page, the index, the log and, only if every future session needs it, the context. Corrections are dated and propagated to the index and the context, so a stale claim stops being the one that gets loaded. `python wiki/lint.py` checks links, orphan pages, the budget and frontmatter.
+
+Everything you write under `wiki/` is gitignored; the repo ships only the templates and the lint. The design, the community ideas it borrows and why: [docs/llm-wiki.md](docs/llm-wiki.md).
+
+## The averaging check
+
+The one rule people most want to break is C8, never average down. `backtest/averaging_check.py` answers "should I add to this loser, and at what price?" with numbers instead of hope:
+
+```powershell
+backtest\.venv\Scripts\python.exe backtest\averaging_check.py PLUG
+```
+
+It finds every past episode, in a universe of similar names, that was in the same state as your position today (far below its EMA50, deep under its 252-day high, in a Death Cross). On each one it replays doing nothing, several buy plans (limits, tranches by drop size, buying on an EMA21 reclaim, buying at market) and several exit plans, and compares every outcome with putting the same money in an index fund. It also prints the one-year trough distribution, the technicals of the day and how the RSI at entry changed the result.
+
+The verdict follows a criterion written into the code before the first run. A plan is opportune only if, in every cohort with at least 30 episodes, it beats a fair bet (buy price divided by the new breakeven) by 5 points, beats the index fund after a 10% bankruptcy haircut, and helps more often than it hurts. The position and the plans to test go in `backtest/averaging_config.json`; the example is made up.
+
+Two limits are printed with every result: the cohorts contain only survivors, and overlapping episodes make the effective sample smaller than the count.
 
 ## Running the backtest
 
@@ -156,13 +178,15 @@ The full write-up, with the method, the limitations and the declared biases, is 
 | `trading_system.md` | The full rules and the changelog |
 | `daily_brief.md` | The script of the weekly check. The name is historical: the check was daily until v4.1 |
 | `indicator_visual_guide.md` | How to read the chart and the indicator |
-| `current_state.example.md`, `trade_log.example.md` | Templates for your own state and trade log |
+| `wiki/` | The project's memory: templates (`*.example.md`) for the context, index, log and a sample page, and `lint.py`. Your own pages stay local |
+| `trade_log.example.md` | Template for your trade log |
 | `wallstreetpro_v3_unified.pine` | The TradingView indicator |
 | `screener.ps1` | The universe screener |
 | `setup.ps1`, `SETUP.bat` | One-time setup |
 | `WALLSTREETPRO_START.bat` | Weekly launcher |
-| `backtest/` | Python engine, the original JavaScript engine and the universe file |
+| `backtest/` | Python engine, the original JavaScript engine, the universe file, and the averaging check with its example config |
 | `docs/backtest-findings.md` | The audit behind v5 |
+| `docs/llm-wiki.md` | How the wiki works and where its ideas come from |
 | `.claude/settings.json` | Pre-approves the TradingView MCP tools and file reads, so the check runs without a permission prompt per call |
 
 `CLAUDE.md` and `.claude/settings.json` are committed on purpose. The system is a Claude Code project, and those two files are part of how it runs. The permission list covers the MCP server's chart and UI automation tools as well as its read tools. If you have a broker connected inside TradingView, review that list before using it.

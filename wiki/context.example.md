@@ -1,12 +1,12 @@
-# CURRENT STATE: capital, positions and P&L
+# CONTEXT: capital, positions and what every session needs
 
-Single source of truth for the volatile data of the system.
+Level 1 of the wiki: Claude Code loads this file in every session (`CLAUDE.md` imports it). Hard budget: **6,000 characters**. Anything that would be merely inconvenient to miss goes to a page under `wiki/` with a one-line pointer here; see `docs/llm-wiki.md`.
 
 - RULES live in `trading_system.md`. They are stable and change rarely.
 - DATA (positions, prices, capital, P&L) lives here. It changes often.
-- When the portfolio changes, edit ONLY this file.
+- History goes to `wiki/log.md`, detail per position or study to its own page, listed in `wiki/index.md`.
 
-> This is a template with made-up numbers. `setup.ps1` copies it to `current_state.md`, which is gitignored. Put your real numbers there, never here.
+> This is a template with made-up numbers. `setup.ps1` copies it to `wiki/context.md`, which is gitignored like everything else you write under `wiki/`. Put your real numbers there, never here.
 
 Last updated: 2026-01-05 (example)
 
@@ -50,11 +50,11 @@ None.
 
 ## LEGACY POSITIONS
 
-Positions bought before the system. No new capital on impulse and never averaged (`trading_system.md` §EC).
+Positions bought before the system. No new capital on impulse and never averaged (`trading_system.md` §EC). If you are tempted, run the averaging check first (`backtest/averaging_check.py`) and let its pre-written criterion answer.
 
 None.
 
-| Ticker | Shares | Resting sell order | Deadline to resolve | Last quarterly review |
+| Ticker | Shares | Resting sell order | Deadline to resolve | Page |
 |:---|---:|:---|:---|:---|
 | | | | | |
 
@@ -77,10 +77,9 @@ The detail of every trade is in `trade_log.md`.
 ## KEY DATES
 
 - YYYY-MM-DD: next FOMC decision
-- YYYY-MM-DD: next CPI release
 - YYYY-MM-DD: next US market holiday
 - YYYY-MM-DD: 20-session sale date of the open position
 
-## LOG OF THIS FILE (newest first)
+## GOTCHAS (8 at most, one line each, linking to the page with the detail)
 
-- 2026-01-05: file created from the template.
+1. Example: decisions and order changes only after the New York close.

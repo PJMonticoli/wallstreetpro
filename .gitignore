@@ -1,6 +1,13 @@
-# Personal state. Created locally from the *.example.md templates, never committed.
-current_state.md
+# Personal state. Created locally from the *.example.* templates, never committed.
+# Everything you write under wiki/ is yours: only the templates and the lint are tracked.
+wiki/*
+!wiki/*.example.md
+!wiki/lint.py
 trade_log.md
+backtest/averaging_config.json
+backtest/averaging_check_out/
+# State file of releases before the wiki
+current_state.md
 
 # Broker statements and exports
 extracto_*

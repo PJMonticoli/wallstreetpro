@@ -54,7 +54,7 @@ SOURCE: TradingView MCP (CDP 9222). Run `tv_health_check` before the first data 
 
 ## STEP 2: LOAD THE STATE
 
-Read `current_state.md`: the open position (if any) with its 20-session sale date, available trading cash, 1R in dollars, legacy positions, key dates.
+Read `wiki/context.md`: the open position (if any) with its 20-session sale date, available trading cash, 1R in dollars, legacy positions, key dates.
 
 ---
 
@@ -88,7 +88,7 @@ Confirm the 10-session high and the close of the candidate with `data_get_ohlcv(
 | High of the previous 10 sessions (the one it broke) | $ |
 | **ADR20 %** (from the screener or the Pine indicator) | % |
 | **1R per share = 1.5 x ADR20 x price** | $ |
-| **Shares = 1R in dollars (from `current_state.md`) / 1R per share**, rounded down | |
+| **Shares = 1R in dollars (from `wiki/context.md`) / 1R per share**, rounded down | |
 | Estimated notional (close x shares) **plus the 20% cushion** | $ |
 | Does it fit in the available trading cash? | yes / no |
 | Earnings | days |
@@ -98,7 +98,7 @@ Confirm the 10-session high and the close of the candidate with `data_get_ohlcv(
 > **If the notional does not fit in the cash, the name is SKIPPED.** The stop is never tightened to make it fit.
 > **There is no WAIT category.** Either the signal is there and it passes the 5, or there is no trade this week.
 
-**If it is a BUY, the order is placed TODAY, in the same session.** An analysis that ends in a file and not at the broker is worth zero. Update the execution scoreboard in `current_state.md` (§MET).
+**If it is a BUY, the order is placed TODAY, in the same session.** An analysis that ends in a file and not at the broker is worth zero. Update the execution scoreboard in `wiki/context.md` (§MET).
 
 ### The order, exactly as it is entered at the broker
 
@@ -128,7 +128,7 @@ Nothing else. **The stop is never moved: not down, not to breakeven, not to a tr
 
 **On closing (by stop or by date):** add the row to `trade_log.md` with MAE and MFE in R, realized R, commission and process violations. **Then recompute the expectancy against the kill criterion (§MET): at 20 closed trades, if it is negative, the trading capital is closed and everything goes to a broad index ETF.**
 
-**Legacy positions (if `current_state.md` lists any):** price and distance to their resting sell orders. **Averaging is PROHIBITED (C8).** A re-buy is only possible as a new trade that passes v5 in full, ignoring the average price and the existing shares (§EC).
+**Legacy positions (if `wiki/context.md` lists any):** price and distance to their resting sell orders. **Averaging is PROHIBITED (C8).** A re-buy is only possible as a new trade that passes v5 in full, ignoring the average price and the existing shares (§EC).
 
 ---
 
