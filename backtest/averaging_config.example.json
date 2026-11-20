@@ -1,0 +1,13 @@
+{
+  "_comment": "Made-up example. setup.ps1 copies this file to averaging_config.json (gitignored); put your real position there. cohort: small (miners and narrative small caps) or crypto (crypto names, filtered by the BTC drawdown). Buy limits: limits (absolute prices), limits_pct (relative to the price of the day) and custom_plans, e.g. {\"two tranches\": [[500, 2.05], [500, 1.35]]}.",
+  "PLUG": {
+    "shares": 200,
+    "cost": 1000.0,
+    "sells_gtc": [],
+    "cohort": "small",
+    "usd": [500, 1000],
+    "limits_pct": [-0.35, -0.50],
+    "custom_plans": {},
+    "fundamentals": {"as_of": null, "shares_out": null, "cash": null}
+  }
+}

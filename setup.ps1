@@ -7,7 +7,8 @@
   2. Clones the third-party TradingView MCP server and installs its dependencies.
   3. Registers that server with Claude Code, under the name "tradingview", for this folder.
   4. Creates a Python virtual environment for the backtest and installs requirements.txt.
-  5. Creates current_state.md and trade_log.md from the example templates.
+  5. Creates the personal files from the example templates: wiki/context.md, wiki/index.md,
+     wiki/log.md, trade_log.md and backtest/averaging_config.json.
 
   It is safe to run again: every step checks before it acts, and nothing that
   already exists is overwritten.
@@ -225,7 +226,14 @@ if ($SkipBacktest) {
 
 # ---------------------------------------------------------------- 5. state files
 Write-Step '[5/5] Personal state files (gitignored, created from the templates)'
-foreach ($pair in @(@('current_state.example.md', 'current_state.md'), @('trade_log.example.md', 'trade_log.md'))) {
+$Templates = @(
+    @('wiki\context.example.md', 'wiki\context.md'),
+    @('wiki\index.example.md', 'wiki\index.md'),
+    @('wiki\log.example.md', 'wiki\log.md'),
+    @('trade_log.example.md', 'trade_log.md'),
+    @('backtest\averaging_config.example.json', 'backtest\averaging_config.json')
+)
+foreach ($pair in $Templates) {
     $from = Join-Path $Root $pair[0]
     $to   = Join-Path $Root $pair[1]
     if (Test-Path -LiteralPath $to) {
@@ -253,7 +261,7 @@ Write-Host ''
 Write-Host ' What is left to do by hand, once:'
 Write-Host '   1. Open TradingView Desktop, log in, open the Pine Editor, paste'
 Write-Host '      wallstreetpro_v3_unified.pine, save it and add it to the chart.'
-Write-Host '   2. Open current_state.md and replace the example numbers with yours.'
+Write-Host '   2. Open wiki\context.md and replace the example numbers with yours.'
 Write-Host '   3. Run WALLSTREETPRO_START.bat after the New York close.'
 Write-Host ''
 if ($Problems.Count -gt 0) { exit 1 }

@@ -26,7 +26,9 @@ REM -- 0. Preflight ------------------------------------------------
 if not exist "%TV_MCP_REPO%\src\server.js" goto no_mcp
 where claude >nul 2>&1
 if errorlevel 1 goto no_claude
-if not exist "%WSP_HOME%current_state.md" copy /Y "%WSP_HOME%current_state.example.md" "%WSP_HOME%current_state.md" >nul
+if not exist "%WSP_HOME%wiki\context.md" copy /Y "%WSP_HOME%wiki\context.example.md" "%WSP_HOME%wiki\context.md" >nul
+if not exist "%WSP_HOME%wiki\index.md" copy /Y "%WSP_HOME%wiki\index.example.md" "%WSP_HOME%wiki\index.md" >nul
+if not exist "%WSP_HOME%wiki\log.md" copy /Y "%WSP_HOME%wiki\log.example.md" "%WSP_HOME%wiki\log.md" >nul
 if not exist "%WSP_HOME%trade_log.md" copy /Y "%WSP_HOME%trade_log.example.md" "%WSP_HOME%trade_log.md" >nul
 
 REM -- 1. Close previous TradingView instances ---------------------

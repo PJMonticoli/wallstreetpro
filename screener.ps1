@@ -7,7 +7,7 @@
 #   powershell -ExecutionPolicy Bypass -File screener.ps1
 #   powershell -ExecutionPolicy Bypass -File screener.ps1 -Capital 25000 -CashAvail 8000
 # The sizing columns are hints. -Capital and -CashAvail default to the example
-# numbers of current_state.example.md; WSP_CAPITAL and WSP_CASH override them.
+# numbers of wiki/context.example.md; WSP_CAPITAL and WSP_CASH override them.
 #
 # ---------------------------------------------------------------------------
 # DESIGN NOTES. Read before changing anything. Each one came out of a real session.
